@@ -1,7 +1,7 @@
 // チームToDo Service Worker
 // - アプリの外枠（HTML/JS/CSS/アイコン）をキャッシュして即起動
 // - プッシュ通知の受信とタップ時の起動
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `shell-${VERSION}`;
 
 self.addEventListener("install", (e) => {
