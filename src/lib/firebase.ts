@@ -1,7 +1,7 @@
 "use client";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { browserLocalPersistence, getAuth, setPersistence } from "firebase/auth";
 import {
   initializeFirestore,
   getFirestore,
@@ -19,6 +19,8 @@ const config = {
 
 export const app = getApps().length ? getApp() : initializeApp(config);
 export const auth = getAuth(app);
+// ブラウザを閉じてもログイン状態を保持する
+export const authPersistenceReady = setPersistence(auth, browserLocalPersistence);
 
 // 端末内にデータを保存 → 次回は開いた瞬間に表示、オフラインでも閲覧・編集可
 let _db: Firestore;

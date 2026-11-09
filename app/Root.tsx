@@ -10,7 +10,7 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, authPersistenceReady } from "@/lib/firebase";
 import { saveProfile } from "./store";
 import TodoApp from "./TodoApp";
 
@@ -61,6 +61,7 @@ export default function Root() {
       window.matchMedia("(display-mode: standalone)").matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
     try {
+      await authPersistenceReady;
       // ホーム画面から開いたアプリではポップアップが使えないことがあるのでリダイレクト
       if (standalone) await signInWithRedirect(auth, provider);
       else await signInWithPopup(auth, provider);
