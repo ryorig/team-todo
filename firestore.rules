@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// ここがチームの「入れる人リスト」です。メンバーが増えたら編集して公開してください。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          // ドメインごと許可（このドメインのGoogleアカウントは全員OK）
+          request.auth.token.email.matches('.*@tonari[.]ac$')
+          // 個別に許可（Gmailなど）
+          || request.auth.token.email in [
+            'nakamotoryoke@gmail.com'
+          ]
+        );
+    }
+
+    // メンバー一覧（担当者選択に使う）：自分の分だけ書ける
+    match /users/{uid} {
+      allow read: if isMember();
+      allow write: if isMember() && request.auth.uid == uid;
+    }
+
+    match /lists/{id} {
+      allow read, write: if isMember();
+    }
+
+    match /tasks/{id} {
+      allow read, delete: if isMember();
+      allow create, update: if isMember()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 300;
+    }
+
+    // 通知の購読情報はサーバー（Vercel）からだけ触る
+    match /pushSubs/{id} {
+      allow read, write: if false;
+    }
+  }
+}
