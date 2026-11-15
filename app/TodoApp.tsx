@@ -416,7 +416,7 @@ function TaskSheet(props: {
           )}
         </div>
 
-        {!isSub && (
+        {mode === "edit" && !isSub && (
           <select className="list-select" value={listId} onChange={(e) => setListId(e.target.value)}>
             {lists.map((l) => (
               <option key={l.id} value={l.id}>
