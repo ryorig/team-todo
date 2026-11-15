@@ -22,7 +22,6 @@ export type TaskInput = {
   parentId?: string | null;
   title: string;
   notes?: string;
-  dueDate?: string | null;
   assigneeId?: string | null;
   starred?: boolean;
 };
@@ -133,7 +132,6 @@ export function createTask(input: TaskInput) {
     parentId: input.parentId ?? null,
     title: title.slice(0, 300),
     notes: (input.notes ?? "").slice(0, 5000),
-    dueDate: input.dueDate || null,
     assigneeId: input.assigneeId || null,
     starred: !!input.starred,
     done: false,
@@ -150,7 +148,6 @@ export function updateTask(id: string, patch: Partial<TaskInput>, before?: Task)
   const set: Record<string, unknown> = {};
   if (patch.title !== undefined) set.title = patch.title.trim().slice(0, 300) || before?.title || "";
   if (patch.notes !== undefined) set.notes = patch.notes.slice(0, 5000);
-  if (patch.dueDate !== undefined) set.dueDate = patch.dueDate || null;
   if (patch.assigneeId !== undefined) set.assigneeId = patch.assigneeId || null;
   if (patch.starred !== undefined) set.starred = patch.starred;
   if (patch.listId !== undefined) set.listId = patch.listId;
@@ -199,4 +196,3 @@ export async function api(path: string, method: string, body: unknown) {
 function notifyAssigned(taskId: string) {
   api("/api/notify/assign", "POST", { taskId }).catch(() => {});
 }
-

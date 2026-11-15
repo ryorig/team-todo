@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb, verifyRequest } from "@/lib/admin";
 import { pushToUser } from "@/lib/push";
-import { formatDue } from "@/lib/date";
 
 // タスクを誰かに割り当てたとき、アプリから呼ばれる
 export async function POST(req: Request) {
@@ -15,10 +14,9 @@ export async function POST(req: Request) {
   if (!t?.assigneeId || t.assigneeId === uid) return NextResponse.json({ ok: true, skipped: true });
 
   const by = (await db.collection("users").doc(uid).get()).data();
-  const due = t.dueDate ? `（期限: ${formatDue(t.dueDate)}）` : "";
   await pushToUser(t.assigneeId, {
     title: `${by?.name ?? "メンバー"}さんからタスクが割り当てられました`,
-    body: `${t.title}${due}`,
+    body: t.title,
     url: "/",
     tag: `assign-${taskId}`,
   });

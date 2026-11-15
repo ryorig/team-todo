@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppUser, List, Task } from "@/lib/types";
-import { addDays, formatDue, todayStr } from "@/lib/date";
 import * as A from "./store";
 
 type ClientUser = AppUser;
@@ -79,7 +78,6 @@ export default function TodoApp({
   const [adding, setAdding] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDone, setShowDone] = useState(false);
-  const today = todayStr();
 
   useEffect(() => {
     if (denied) onDenied();
@@ -116,23 +114,12 @@ export default function TodoApp({
   const topLevel = tasks.filter((t) => !t.parentId);
   const inScope = (t: ClientTask) => scope === "all" || t.assigneeId === me.id || (!t.assigneeId && t.createdById === me.id);
 
-  // ---- 「今日」ビューのセクション ----
-  const todaySections = useMemo(() => {
-    const open = topLevel.filter((t) => !t.done && inScope(t));
-    const byDue = (a: ClientTask, b: ClientTask) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "");
-    const tomorrow = addDays(today, 1);
-    const week = addDays(today, 7);
-    return [
-      { key: "overdue", title: "期限切れ", tone: "danger", items: open.filter((t) => t.dueDate && t.dueDate < today).sort(byDue) },
-      { key: "today", title: "今日", tone: "primary", items: open.filter((t) => t.dueDate === today) },
-      { key: "tomorrow", title: "明日", tone: "", items: open.filter((t) => t.dueDate === tomorrow) },
-      { key: "week", title: "今後7日間", tone: "", items: open.filter((t) => t.dueDate && t.dueDate > tomorrow && t.dueDate <= week).sort(byDue) },
-      { key: "starred", title: "スター付き（期限なし）", tone: "", items: open.filter((t) => !t.dueDate && t.starred) },
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, scope, today]);
-
-  const urgentCount = todaySections[0].items.length + todaySections[1].items.length;
+  // ---- 「今日」ビュー（期限ではなく、未完了タスクを表示） ----
+  const todayTasks = useMemo(
+    () => topLevel.filter((t) => !t.done && inScope(t)),
+    [topLevel, scope, me.id],
+  );
+  const urgentCount = todayTasks.length;
 
   // ---- リスト / スター ビュー ----
   const currentList: List | undefined = listMap.get(view);
@@ -147,10 +134,7 @@ export default function TodoApp({
           .filter((t) => t.listId === view && t.done)
           .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
   const sortOpen = (arr: ClientTask[]) =>
-    [...arr].sort((a, b) => {
-      if (!!a.dueDate !== !!b.dueDate) return a.dueDate ? -1 : 1;
-      return (a.dueDate ?? "").localeCompare(b.dueDate ?? "");
-    });
+    [...arr];
 
   const defaultListId = currentList?.id ?? lists[0]?.id ?? "";
 
@@ -159,7 +143,6 @@ export default function TodoApp({
     const subs = childrenOf.get(t.id) ?? [];
     const subsOpen = subs.filter((s) => !s.done);
     const assignee = t.assigneeId ? userMap.get(t.assigneeId) : null;
-    const overdue = !t.done && t.dueDate && t.dueDate < today;
     return (
       <li className={"task" + (t.done ? " is-done" : "")}>
         <div className="task-main" onClick={() => setEditing(t)} role="button" tabIndex={0}>
@@ -168,11 +151,6 @@ export default function TodoApp({
             <div className="task-title">{t.title}</div>
             {t.notes && !t.done && <div className="task-notes">{t.notes}</div>}
             <div className="task-meta">
-              {t.dueDate && (
-                <span className={"chip" + (overdue ? " chip-danger" : t.dueDate === today ? " chip-primary" : "")}>
-                  {formatDue(t.dueDate, today)}
-                </span>
-              )}
               {showList && listMap.get(t.listId) && <span className="meta-text">{listMap.get(t.listId)!.name}</span>}
               {subs.length > 0 && (
                 <span className="meta-text">
@@ -197,11 +175,6 @@ export default function TodoApp({
                   <Check done={s.done} onClick={() => toggle(s)} />
                   <div className="task-body">
                     <div className="task-title">{s.title}</div>
-                    {s.dueDate && (
-                      <div className="task-meta">
-                        <span className={"chip" + (s.dueDate < today ? " chip-danger" : "")}>{formatDue(s.dueDate, today)}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </li>
@@ -267,27 +240,18 @@ export default function TodoApp({
                 チーム全員
               </button>
             </div>
-            {todaySections.every((s) => s.items.length === 0) ? (
+            {todayTasks.length === 0 ? (
               <div className="empty">
                 <div className="empty-art" aria-hidden>✓</div>
                 <p className="empty-title">今日やることはありません</p>
-                <p className="muted">期限付きのタスクを追加すると、ここに表示されます。</p>
+                <p className="muted">タスクを追加すると、ここに表示されます。</p>
               </div>
             ) : (
-              todaySections
-                .filter((s) => s.items.length > 0)
-                .map((s) => (
-                  <section key={s.key} className="section">
-                    <h2 className={"section-title " + s.tone}>
-                      {s.title} <span className="count">{s.items.length}</span>
-                    </h2>
-                    <ul className="task-list">
-                      {s.items.map((t) => (
-                        <Row key={t.id} t={t} showList />
-                      ))}
-                    </ul>
-                  </section>
-                ))
+              <ul className="task-list">
+                {todayTasks.map((t) => (
+                  <Row key={t.id} t={t} showList />
+                ))}
+              </ul>
             )}
           </>
         ) : (

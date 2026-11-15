@@ -17,7 +17,6 @@ export type Task = {
   parentId: string | null; // あればサブタスク
   title: string;
   notes: string;
-  dueDate: string | null; // YYYY-MM-DD（日本時間）
   assigneeId: string | null;
   starred: boolean;
   done: boolean;
