@@ -336,9 +336,7 @@ export default function TodoApp({
           lists={lists}
           initial={{
             listId: defaultListId,
-            dueDate: view === "today" ? today : null,
             assigneeId: view === "today" && scope === "mine" ? me.id : null,
-            starred: view === "starred",
           }}
           onClose={() => setAdding(false)}
           onSave={(v) => {
@@ -416,13 +414,10 @@ function TaskSheet(props: {
   const { mode, initial, users, lists, me } = props;
   const [title, setTitle] = useState(initial.title ?? "");
   const [notes, setNotes] = useState(initial.notes ?? "");
-  const [dueDate, setDueDate] = useState<string>(initial.dueDate ?? "");
   const [assigneeId, setAssigneeId] = useState<string>(initial.assigneeId ?? "");
   const [listId, setListId] = useState<string>(initial.listId ?? lists[0]?.id ?? "");
-  const [starred, setStarred] = useState(!!initial.starred);
   const [subTitle, setSubTitle] = useState("");
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const today = todayStr();
   const isSub = !!props.task?.parentId;
 
   useEffect(() => {
@@ -435,17 +430,9 @@ function TaskSheet(props: {
       listId,
       title,
       notes,
-      dueDate: dueDate || null,
       assigneeId: assigneeId || null,
-      starred,
     });
   };
-
-  const quick = [
-    { label: "今日", v: today },
-    { label: "明日", v: addDays(today, 1) },
-    { label: "来週", v: addDays(today, 7) },
-  ];
 
   return (
     <div className="scrim" onClick={props.onClose}>
@@ -499,23 +486,6 @@ function TaskSheet(props: {
           onChange={(e) => setNotes(e.target.value)}
         />
 
-        <div className="field">
-          <span className="field-label">期限</span>
-          <div className="chips">
-            {quick.map((q) => (
-              <button key={q.label} className={"chip-btn" + (dueDate === q.v ? " is-on" : "")} onClick={() => setDueDate(dueDate === q.v ? "" : q.v)}>
-                {q.label}
-              </button>
-            ))}
-            <input className="date-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} aria-label="日付を選択" />
-            {dueDate && (
-              <button className="chip-btn" onClick={() => setDueDate("")} aria-label="期限を外す">
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-
         {!isSub && (
           <div className="field">
             <span className="field-label">担当</span>
@@ -532,13 +502,6 @@ function TaskSheet(props: {
                 ))}
               </select>
             </div>
-          </div>
-        )}
-
-        {!isSub && (
-          <div className="field">
-            <span className="field-label">スター</span>
-            <Star on={starred} onClick={() => setStarred((s) => !s)} />
           </div>
         )}
 
