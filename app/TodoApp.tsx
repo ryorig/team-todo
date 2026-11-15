@@ -413,7 +413,6 @@ function TaskSheet(props: {
 }) {
   const { mode, initial, users, lists, me } = props;
   const [title, setTitle] = useState(initial.title ?? "");
-  const [notes, setNotes] = useState(initial.notes ?? "");
   const [assigneeId, setAssigneeId] = useState<string>(initial.assigneeId ?? "");
   const [listId, setListId] = useState<string>(initial.listId ?? lists[0]?.id ?? "");
   const [subTitle, setSubTitle] = useState("");
@@ -429,7 +428,6 @@ function TaskSheet(props: {
     props.onSave({
       listId,
       title,
-      notes,
       assigneeId: assigneeId || null,
     });
   };
@@ -478,14 +476,6 @@ function TaskSheet(props: {
             }
           }}
         />
-        <textarea
-          className="notes-input"
-          placeholder="詳細を追加"
-          value={notes}
-          rows={2}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-
         {!isSub && (
           <div className="field">
             <span className="field-label">担当</span>
